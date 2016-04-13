@@ -9,28 +9,119 @@
 			color: blue;
 			text-decoration: none;
 		}
+		.file{
+
+		}
+		.file:hover{
+			cursor: pointer;
+			background: #E0E0E0;
+		}
+		table{
+
+		}
+		tr,td,table{
+			border: none;
+			border-collapse: collapse;
+		}
+		.checkbox{
+			width: 18px;
+			height: 18px;
+		}
+		td{
+			border-left: 1px solid gray;
+			border-right: 1px solid gray;
+			padding: 2px 5px;
+		}
+		.titleline td{
+			border-bottom: 1px solid gray;
+		}
+		td.status{
+			text-align: center;
+			width: 50px;
+		}
+		.titleline td{
+			border-top: 1px solid gray;
+		}
+		td.checkbox{
+			width: 20px;
+		}
 		</style>
 	</head>
 	<body>
 		<div ng-app="SVNOnline" ng-controller="SVNOnlineCtrl">
-			<span ng-repeat="p in paths" class="path">
-				<a href="#{{p.path}}" ng-if="p.path">{{p.name}}</a>
-				<a ng-if="!p.path">{{p.name}}</a>
-			</span>
-			<span>{{status}}</span>
-			<ul>
-				<li ng-repeat="f in list">
-					<span ng-if="f.status">[{{f.status}}]</span>
-					<a href="#{{path+f.path}}" ng-if="f.path.endsWith('/')">{{f.path}}</a>
-					<a ng-if="! f.path.endsWith('/')">{{f.path}}</a>
-				</li>
-			</ul>
+			<div style="width: 600px; margin: 0 auto;">
+				<span ng-show="info.rev">[REV:{{info.rev}}]</span>
+				<span ng-repeat="p in paths" class="path">
+					<a href="#{{p.path}}" ng-if="p.path">{{p.name}}</a>
+					<a ng-if="!p.path">{{p.name}}</a>
+				</span>
+				<span>{{status}}</span>
+				<span style="color: red;" ng-if="error.length>0">{{error}}</span>
+				<table style="width: 100%; margin: 5px 0;">
+					<tr class="titleline">
+						<td>
+							<img class="checkbox" ng-click="checkall()" ng-src="{{checkedall?'/static/checked.png':'/static/unchecked.png'}}">
+						</td>
+						<td class="status">STATUS</td>
+						<td>
+							FILE
+						</td>
+					</tr>
+					<tr ng-repeat="f in list" class="file">
+						<td class="checkbox">
+							<img class="checkbox" ng-click="f.checked=!f.checked" ng-src="{{f.checked?'/static/checked.png':'/static/unchecked.png'}}">
+						</td>
+						<td class="status"><span ng-if="f.status">[{{f.status}}]</span></td>
+						<td>
+							<a style="display: block;" href="#{{path+f.path}}" ng-if="f.path.endsWith('/')">{{f.path}}</a>
+							<a style="display: block;" ng-click="f.checked=!f.checked" ng-if="! f.path.endsWith('/')">{{f.path}}</a>
+						</td>
+					</tr>
+					<tr style="border-bottom:1px solid gray;">
+						<td>
+							
+						</td>
+						<td>
+							
+						</td>
+						<td></td>
+					</tr>
+				</table>
+				
+				<textarea ng-show="showtext" style="padding: 0; width: 100%; height: 80px; margin-left: -1px; border: 1px solid gray;" ng-bind="text"></textarea>
+				
+				<div style="border: 1px solid gray; padding:5px;" ng-show="logs && logs.length>0">
+					<span style="display: block;" ng-repeat="l in logs">{{l}}</span>
+				</div>
+
+				<div style="text-align: center;">
+					<a href="javascript:void(0);" ng-click="chdir();">REFRESH</a>
+					|
+					<a href="javascript:void(0);" ng-click="update();">UPDATE</a>
+					|
+					<a href="javascript:void(0);" ng-click="commit();">COMMIT</a>
+					|
+					<a href="javascript:void(0);" ng-click="cleanup();">CLEANUP</a>
+					|
+					<a href="javascript:void(0);" ng-click="revert();">REVERT</a>
+				</div>
+			</div>
 		</div>
 		<script>
 		var app = angular.module('SVNOnline', []);
 		app.controller('SVNOnlineCtrl', function($scope, $http,$location,$window) {
 			$scope.status = '';
+			$scope.checkall = function(){
+				$scope.checkedall = !$scope.checkedall;
+				for (var i = 0; i < $scope.list.length; i++) {
+					$scope.list[i].checked = $scope.checkedall;
+				}
+			}
+			$scope.text = "";
 			$scope.chdir = function(p){
+				if(!p){
+					p = $scope.path;
+				}
 				var prep = $scope.path;
 				$scope.path = p;
 
@@ -58,15 +149,78 @@
 					}
 				}
 
-				$scope.status = 'waitting...';
+				$scope.status = 'load...';
 				$http({url:'/api/list',params:{path:$scope.path}}).success(function(res) {
-					$scope.status = '';
-					$scope.list = res.data;
+					$scope.error = $scope.status = '';
+					$scope.list = res.data.list;
+					// $scope.info = res.data.info;
+					$scope.checkedall = false;
 				}).error(function(){
 					if(prep!=p){
-						$location.path(prep);
+						// $location.path(prep);
 					}
-				})
+					$scope.status = '';
+					$scope.error = "error!";
+				});
+			};
+			$scope.checkedargs = function(){
+				var arr = [];
+				for (var i = 0; i < $scope.list.length; i++) {
+					if($scope.list[i].checked){
+						arr.push($scope.list[i].path.trim());
+					}
+				}
+				// console.log(arr);
+				return arr.join(";");
+			};
+			$scope.cleanup = function(){
+				$scope.status = 'cleanup...';
+				$http({url:'/api/svn',params:{cmd:'cleanup',path:$scope.path}}).success(function(res) {
+					$scope.error = $scope.status = '';
+					$scope.logs = res.data;
+				}).error(function(){
+					$scope.status = '';
+					$scope.error = "error!";
+				});
+			};
+			$scope.update = function(){
+				$scope.status = 'update...';
+				$http({url:'/api/svn',params:{cmd:'update',path:$scope.path}}).success(function(res) {
+					$scope.error = $scope.status = '';
+					$scope.logs = res.data;
+					$scope.chdir();
+				}).error(function(){
+					$scope.status = '';
+					$scope.error = "error!";
+				});
+			};
+			$scope.revert = function(){
+				$scope.status = 'revert...';
+				$http({url:'/api/svn',params:{cmd:'revert',path:$scope.path, args:$scope.checkedargs()}}).success(function(res) {
+					$scope.error = $scope.status = '';
+					$scope.logs = res.data;
+					$scope.chdir();
+				}).error(function(){
+					$scope.status = '';
+					$scope.error = "error!";
+				});
+			};
+			$scope.commit = function(){
+				if($scope.showtext){
+					// commit
+					$scope.status = 'commit...';
+					$http({url:'/api/svn',params:{cmd:'commit',path:$scope.path, args:"-m;\""+$scope.text.replace(/\n/g,"\\n")+"\";"+$scope.checkedargs()}}).success(function(res) {
+						$scope.error = $scope.status = '';
+						$scope.logs = res.data;
+						$scope.chdir();
+					}).error(function(){
+						$scope.status = '';
+						$scope.error = "error!";
+					});
+				}
+				else{
+					$scope.showtext = true;
+				}
 			}
 			$scope.$on('$locationChangeSuccess', function(r,v){
 				$scope.chdir($location.path());

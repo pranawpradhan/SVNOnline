@@ -35,6 +35,9 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 libdir = os.path.dirname(__file__)
 if not libdir:
     libdir = os.getcwd()
@@ -73,47 +76,68 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def api_list(self, path):
         if path.startswith('/'):
             path = path[1:]
-        rootp = os.path.join(options['workdir'], path)
-        print rootp
+        rootp = os.path.join(options['workdir'], *(path.split('/')))
         os.chdir(rootp)
-        res = []
         l = svn.local.LocalClient(rootp)
-        
+        d = {}
+        info = None
+        for p in os.listdir(rootp):
+            if p.startswith('.'):
+                continue
+            try:
+                f = ('%s%s' % (p, '/' if os.path.isdir(os.path.join(rootp, p)) else '')).strip()
+                r = {
+                    'path':f.decode('utf-8'),
+                    'status':''
+                    }
+                d[f] = r
+            except:
+                pass
+
         try:
-            l.info()
+            linfo = l.info()
+            print linfo
+            info = {'rev': linfo['commit#revision']}
             for l in  l.run_command('status', []):
                 r = re.findall('([\S+])\s+(\S.*)', l)
                 if r:
                     r = r[0]
-                    res.append({
-                                'path':r[1],
-                                'status':r[0]
-                                })
+                    f = r[1].strip()
+                    if f in d:
+                        d[f]['status'] = r[0]
+                    else:
+                        d[f] = {
+                            'path':r[1],
+                            'status':r[0]
+                            }
         except:
-            for p in os.listdir(rootp):
-                if p.startswith('.'):
-                    continue
-                f = '%s%s' % (p, '/' if os.path.isdir(os.path.join(rootp, p)) else '')
-                res.append({
-                            'path':f,
-                            'status':''
-                            })
+            pass
         def warp(s):
             if s.endswith('/'):
                 return '.' + s
             else:
                 return s
+        res = d.values()
         res.sort(cmp=lambda a, b:cmp(warp(a['path']), warp(b['path'])))
-        return res
+        return {'info':info, 'list':res}
         
     def api_svn(self, cmd, path, args=""):
         if path.startswith('/'):
             path = path[1:]
-        p = os.path.join(options['workdir'], path)
-        os.chdir(p)
-        l = svn.local.LocalClient(p)
-        print l.info()
-        return l.run_command(cmd, [])
+        rootp = os.path.join(options['workdir'], *(path.split('/')))
+        os.chdir(rootp)
+        l = svn.local.LocalClient(rootp)
+        try:
+            l.info()
+        except:
+            return ['not a svn copy: %s' % path]
+        args = args.split(';')
+        print args
+        res = [r for r in l.run_command(cmd, args) if r]
+        try:
+            return [r.decode('gb2312') for r in res]
+        except:
+            return res
     
     def do_GET(self):
         if not self.check_auth():
@@ -158,6 +182,7 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 res = {'data':data, 'code':0}
             except ApiException, e:
                 res = e.res
+            print res
             f.write(json.dumps(res))
         else:
             filepath = os.path.join(libdir, url.path.strip('/') or 'index.html')
