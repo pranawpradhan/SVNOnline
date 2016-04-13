@@ -26,6 +26,9 @@ import sys
 import urllib
 import urlparse
 
+import svn.local
+import re
+import inspect
 
 try:
     from cStringIO import StringIO
@@ -33,6 +36,8 @@ except ImportError:
     from StringIO import StringIO
 
 libdir = os.path.dirname(__file__)
+if not libdir:
+    libdir = os.getcwd()
 
 options = {
         'workdir':os.getcwd(),
@@ -40,6 +45,13 @@ options = {
         'port':8000
         }
 
+
+class ApiException(Exception):
+    def __init__(self, res):
+        self.res = res
+
+def ex(e, c=-1):
+    return ApiException({"code":c, "msg":e})
 
 class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     server_version = "SVNOnline/" + __version__
@@ -58,28 +70,98 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         return False
     
-    def api_xx(self):
-        pass
+    def api_list(self, path):
+        if path.startswith('/'):
+            path = path[1:]
+        rootp = os.path.join(options['workdir'], path)
+        print rootp
+        os.chdir(rootp)
+        res = []
+        l = svn.local.LocalClient(rootp)
+        
+        try:
+            l.info()
+            for l in  l.run_command('status', []):
+                r = re.findall('([\S+])\s+(\S.*)', l)
+                if r:
+                    r = r[0]
+                    res.append({
+                                'path':r[1],
+                                'status':r[0]
+                                })
+        except:
+            for p in os.listdir(rootp):
+                if p.startswith('.'):
+                    continue
+                f = '%s%s' % (p, '/' if os.path.isdir(os.path.join(rootp, p)) else '')
+                res.append({
+                            'path':f,
+                            'status':''
+                            })
+        def warp(s):
+            if s.endswith('/'):
+                return '.' + s
+            else:
+                return s
+        res.sort(cmp=lambda a, b:cmp(warp(a['path']), warp(b['path'])))
+        return res
+        
+    def api_svn(self, cmd, path, args=""):
+        if path.startswith('/'):
+            path = path[1:]
+        p = os.path.join(options['workdir'], path)
+        os.chdir(p)
+        l = svn.local.LocalClient(p)
+        print l.info()
+        return l.run_command(cmd, [])
+    
     def do_GET(self):
         if not self.check_auth():
             return
         self.path = self.path.replace('..', '')
         url = urlparse.urlparse(self.path)
-        
         contenttype = 'text/html'
         statuscode = 200
         f = StringIO()
+#         print url
         if url.path.startswith('/api/'):
-            contenttype = 'text/json'
-            apiname = 'api_%s' % (url.path.replace('/api/', ''))
-            if hasattr(self, apiname):
+            try:
+                from urllib import unquote
+                contenttype = 'text/json'
+                apiname = 'api_%s' % (url.path.replace('/api/', ''))
+                if not hasattr(self, apiname):
+                    raise ex('not such api: %s' % apiname)
+                
+                param = dict([(r[0], unquote(r[1]).replace('+', ' ')) for r in re.findall('([^&^=]+)=([^&^=]*)', url.query)])
                 apifunc = getattr(self, apiname)
-                res = apifunc() or {'code':0}
-            else:
-                res = {'code':-1, 'msg':'not such api: %s' % apiname}
+                
+                argspec = inspect.getargspec(apifunc)
+                kvargs = {}
+                funcagrs = argspec.args
+                defaults = argspec.defaults
+                if defaults:
+                    for i, v in enumerate(funcagrs[-len(defaults):]):
+                        kvargs[v] = defaults[i]
+
+                if len(funcagrs):
+                    param['_param'] = param
+                    argslen = len(funcagrs) - (len(defaults) if defaults else 0) - 1
+                    missargs = []
+                    for i, k in enumerate(funcagrs[1:]):
+                        if k in param:
+                            kvargs[k] = param[k]
+                        elif i < argslen:
+                            missargs.append(k)
+                    if missargs:
+                        raise ex('need argments: %s' % (', '.join(missargs)))
+                data = apifunc(**kvargs)
+                res = {'data':data, 'code':0}
+            except ApiException, e:
+                res = e.res
             f.write(json.dumps(res))
         else:
             filepath = os.path.join(libdir, url.path.strip('/') or 'index.html')
+            print filepath
             if os.path.exists(filepath) and os.path.isfile(filepath):
                 f.write(open(filepath, 'rb').read())
             else:

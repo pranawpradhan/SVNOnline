@@ -1,9 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title></title>
-</head>
-<body>
-s
-</body>
+	<head>
+		<meta charset="utf-8">
+		<script src="/static/angular.min.js"></script>
+		<title>SVNOnline</title>
+		<style type="text/css">
+		a{
+			color: blue;
+			text-decoration: none;
+		}
+		</style>
+	</head>
+	<body>
+		<div ng-app="SVNOnline" ng-controller="SVNOnlineCtrl">
+			<span ng-repeat="p in paths" class="path">
+				<a href="#{{p.path}}" ng-if="p.path">{{p.name}}</a>
+				<a ng-if="!p.path">{{p.name}}</a>
+			</span>
+			<span>{{status}}</span>
+			<ul>
+				<li ng-repeat="f in list">
+					<span ng-if="f.status">[{{f.status}}]</span>
+					<a href="#{{path+f.path}}" ng-if="f.path.endsWith('/')">{{f.path}}</a>
+					<a ng-if="! f.path.endsWith('/')">{{f.path}}</a>
+				</li>
+			</ul>
+		</div>
+		<script>
+		var app = angular.module('SVNOnline', []);
+		app.controller('SVNOnlineCtrl', function($scope, $http,$location,$window) {
+			$scope.status = '';
+			$scope.chdir = function(p){
+				var prep = $scope.path;
+				$scope.path = p;
+
+				$scope.paths = [{
+					name:'root/',
+					path:'/',
+				}];
+				if(p.length && p[0]=='/')
+					p = p.substring(1);
+				if(p.length && p[p.length-1]=='/')
+					p = p.substring(0, p.length-1);
+				if(p.length>0){
+					var paths = p.split('/');
+					for (var i = 0; i < paths.length; i++) {
+						var np = paths[i]+'/';
+						var pt = np;
+						if(np==""){
+							np = "/";
+							pt = false;
+						}
+						$scope.paths.push({
+							name:np,
+							path:pt
+						});
+					}
+				}
+
+				$scope.status = 'waitting...';
+				$http({url:'/api/list',params:{path:$scope.path}}).success(function(res) {
+					$scope.status = '';
+					$scope.list = res.data;
+				}).error(function(){
+					if(prep!=p){
+						$location.path(prep);
+					}
+				})
+			}
+			$scope.$on('$locationChangeSuccess', function(r,v){
+				$scope.chdir($location.path());
+			});
+			$scope.chdir("/");
+		});
+		</script>
+	</body>
 </html>
