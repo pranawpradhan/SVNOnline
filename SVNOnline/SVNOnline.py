@@ -96,7 +96,7 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         try:
             linfo = l.info()
-            print linfo
+#             print linfo
             info = {'rev': linfo.get('commit#revision', None), 'url':linfo.get('url', None)}
             for l in  l.run_command('status', []):
                 r = re.findall('([\S+])\s+(\S.*)', l)
