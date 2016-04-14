@@ -186,7 +186,7 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             f.write(json.dumps(res))
         else:
             filepath = os.path.join(libdir, url.path.strip('/') or 'index.html')
-            print filepath
+#             print filepath
             if os.path.exists(filepath) and os.path.isfile(filepath):
                 f.write(open(filepath, 'rb').read())
             else:
