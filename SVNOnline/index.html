@@ -106,9 +106,9 @@
 				
 				<textarea ng-show="showtext" style="display: block; padding: 0; width: 100%; height: 80px; margin-left: -1px; border: 1px solid gray;" ng-bind="text"></textarea>
 				
-				<span ng-if="issvn">
+<!-- 				<span ng-if="issvn">
 					{{info.url}}
-				</span>
+				</span> -->
 				<span ng-if="!issvn">
 					this path is not a svn copy.
 				</span>
@@ -127,7 +127,7 @@
 					|
 					<a href="javascript:void(0);" ng-click="cleanup();" ng-enable="can_status()" ng-class="{enable:can_status()}">CLEANUP</a>
 					|
-					<a href="javascript:void(0);" ng-click="revert();" ng-enable="can_status('')" ng-class="{enable:can_status('')}">REVERT</a>
+					<a href="javascript:void(0);" ng-click="revert();" ng-enable="can_status('AM')" ng-class="{enable:can_status('AM')}">REVERT</a>
 					|
 					<a href="javascript:void(0);" ng-click="add();" ng-enable="can_status('?')" ng-class="{enable:can_status('?')}">ADD</a>
 				</div>
