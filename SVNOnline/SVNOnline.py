@@ -97,14 +97,14 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             linfo = l.info()
             print linfo
-            info = {'rev': linfo['commit#revision']}
+            info = {'rev': linfo.get('commit#revision', None), 'url':linfo.get('url', None)}
             for l in  l.run_command('status', []):
                 r = re.findall('([\S+])\s+(\S.*)', l)
                 if r:
                     r = r[0]
                     f = r[1].strip()
                     if f in d:
-                        d[f]['status'] = r[0]
+                        d[f]['status'] = r[0].strip().upper()
                     else:
                         d[f] = {
                             'path':r[1],
@@ -130,9 +130,9 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             l.info()
         except:
-            return ['not a svn copy: %s' % path]
+            return ['this path is not a svn copy:', path]
         args = args.split(';')
-        print args
+#         print args
         res = [r for r in l.run_command(cmd, args) if r]
         try:
             return [r.decode('gb2312') for r in res]
@@ -182,7 +182,7 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 res = {'data':data, 'code':0}
             except ApiException, e:
                 res = e.res
-            print res
+#             print res
             f.write(json.dumps(res))
         else:
             filepath = os.path.join(libdir, url.path.strip('/') or 'index.html')
