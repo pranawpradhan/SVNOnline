@@ -2,9 +2,13 @@
 <html>
 	<head>
 		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no;">
 		<script src="/static/angular.min.js"></script>
 		<title>SVNOnline</title>
 		<style type="text/css">
+		body{
+			font-size: 14px;
+		}
 		a{
 			color: blue;
 			text-decoration: none;
@@ -24,14 +28,12 @@
 			border: none;
 			border-collapse: collapse;
 		}
-		.checkbox{
-			width: 18px;
-			height: 18px;
-		}
+
 		td{
 			border-left: 1px solid gray;
 			border-right: 1px solid gray;
 			/*padding: 2px 5px;*/
+			border-bottom: 1px solid gray;
 		}
 		.titleline td{
 			border-bottom: 1px solid gray;
@@ -45,9 +47,13 @@
 		}
 		td.checkbox{
 			text-align: center;
-			width: 30px;
+			/*width: 30px;*/
+			width: 1.5rem;
 		}
-
+		.checkbox{
+			width: 1.2rem;
+			height: 1.2rem;
+		}
 		.btns a{
 			color: gray;
 		}
@@ -58,7 +64,7 @@
 	</head>
 	<body>
 		<div ng-app="SVNOnline" ng-controller="SVNOnlineCtrl">
-			<div style="width: 600px; margin: 0 auto;">
+			<div style="width: 100%; margin: 0 auto; max-width: 800px;">
 				<div>
 					<div style="display: inline-block; float: left;">
 						/
@@ -165,9 +171,11 @@
 					p = p.substring(0, p.length-1);
 				if(p.length>0){
 					var paths = p.split('/');
+					var pt = '/';
 					for (var i = 0; i < paths.length; i++) {
 						var np = paths[i]+'/';
-						var pt = np;
+						// var pt = np;
+						pt += np;
 						if(np==""){
 							np = "/";
 							pt = false;
@@ -186,6 +194,9 @@
 					$scope.info = res.data.info;
 					$scope.issvn = $scope.info;
 					$scope.checkedall = false;
+
+					$scope.text="";
+					$scope.showtext = false;
 				}).error(function(){
 					if(prep!=p && !stop){
 						$location.path(prep, true);
