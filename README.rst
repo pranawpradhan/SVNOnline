@@ -1,12 +1,12 @@
-EditOnline
+SVNOnline
 ===============
-A simple online text file editor base on Ace.js.
+A svn online client.
 
 Install
 ===============
 ::
 
- pip install EditOnline
+ pip install SVNOnline
 
 
 Use
@@ -15,17 +15,17 @@ cd to you working directory and run command:
 
 ::
 
- EditOnline
+ SVNOnline
 
 on Windows use:
 ::
 
- EditOnline.bat
+ SVNOnline.bat
 
-if can't find EditOnline command, try:
+if can't find SVNOnline command, try:
 ::
 
- python -m EditOnline
+ python -m SVNOnline
 
 
 open broswer with url **http://127.0.0.1:8000**
@@ -44,19 +44,19 @@ Other tips
 1.set http port 80
 ::
 
- EditOnline 80
+ SVNOnline 80
 
 2.authenticate with username and password (admin admin)
 ::
 
- EditOnline -u admin -p admin
+ SVNOnline -u admin -p admin
 
 3.set the working directory (/tmp)
 ::
 
- EditOnline -d /tmp
+ SVNOnline -d /tmp
 
 4.bind address with 127.0.0.1
 ::
 
- EditOnline 127.0.0.1:8000
+ SVNOnline 127.0.0.1:8000
