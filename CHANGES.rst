@@ -9,3 +9,7 @@ CHANGES
 
 - first useable version.
 
+0.0.3
+
+- wsgi suport
+

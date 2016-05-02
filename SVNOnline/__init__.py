@@ -1,3 +1,3 @@
 import SVNOnline
 
-__alll__ = ['SVNOnline']
+__alll__ = ['SVNOnline', 'wsgi']
