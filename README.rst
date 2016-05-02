@@ -60,3 +60,13 @@ Other tips
 ::
 
  SVNOnline 127.0.0.1:8000
+ 
+5.use as wsgi
+::
+
+ # set username and passwor
+ export WSGI_PARAMS="-u admin -p admin" 
+ # run wsgi with gunicorn
+ gunicorn -b 0.0.0.0:8000 SVNOnline.wsgi:application
+
+ 

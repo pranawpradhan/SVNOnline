@@ -66,7 +66,7 @@ class WSGIHandler(SVNOnline.SVNOnlineRequestHandler):
 
 if os.environ.get('WSGI_PARAMS'):
     argv = [v.strip() for v in os.environ.get('WSGI_PARAMS').split(' ') if v.strip()]
-    EditOnline.config(argv)
+    SVNOnline.config(argv)
 
 def application(environ, start_response):    
     handler = WSGIHandler(None, (environ['REMOTE_ADDR'], None), None)

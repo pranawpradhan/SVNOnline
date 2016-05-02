@@ -13,3 +13,6 @@ CHANGES
 
 - wsgi suport
 
+0.0.5
+
+- README of wsgi

@@ -11,7 +11,7 @@ This module refer to SimpleHTTPServer
 """
 
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 import BaseHTTPServer
 import SocketServer
@@ -220,9 +220,9 @@ def start():
     print "Serving HTTP on", sa[0], "port", sa[1], "..."
     httpd.serve_forever()
 
-def main():
+def config(argv):
     import getopt
-    opts, args = getopt.getopt(sys.argv[1:], "u:p:r:hd:")
+    opts, args = getopt.getopt(argv, "u:p:r:hd:")
     for opt, arg in opts:
         if opt == '-u':
             options['username'] = arg
@@ -248,6 +248,9 @@ def main():
         else:
             options['bind'] = '0.0.0.0'
             options['port'] = int(bp)
+
+def main():
+    config(sys.argv[1:])
     start()
 if __name__ == '__main__':
     main()
