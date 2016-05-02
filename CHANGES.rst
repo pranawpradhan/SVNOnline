@@ -17,6 +17,6 @@ CHANGES
 
 - README of wsgi
 
-0.0.5
+0.0.7
 
 - fix wsgi bug
