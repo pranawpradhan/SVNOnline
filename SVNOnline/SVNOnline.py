@@ -146,17 +146,21 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 #         os.chdir(rootp)
         args = args.split(';')
         delps = []
+        errs = []
         for p in args:
-            apath = os.path.join(rootp, p)
-            if os.path.exists(apath):
-                if os.path.isdir(apath):
-                    # dir
-                    shutil.rmtree(apath)
-                else:
-                    #
-                    os.remove(apath)
-                delps.append(p)
-        return {"count":len(delps), "removed":delps}
+            try:
+                apath = os.path.join(rootp, p)
+                if os.path.exists(apath):
+                    if os.path.isdir(apath):
+                        # dir
+                        shutil.rmtree(apath)
+                    else:
+                        #
+                        os.remove(apath)
+                    delps.append(p)
+            except:
+                errs.append(p)
+        return {"count":len(delps), "removed":delps, "errors":errs}
 
     def do_GET(self):
         if not self.check_auth():
