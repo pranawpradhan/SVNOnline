@@ -89,7 +89,7 @@
 							FILE
 						</td>
 					</tr>
-					<tr ng-repeat="f in list" class="file">
+					<tr ng-repeat="f in list" class="file" ng-if="list && list.length>0">
 						<td class="checkbox">
 							<img class="checkbox" ng-click="f.checked=!f.checked" ng-src="{{f.checked?'/static/checked.png':'/static/unchecked.png'}}">
 						</td>
@@ -99,22 +99,16 @@
 							<a style="display: block;" ng-click="f.checked=!f.checked" ng-if="! f.path.endsWith('/')">{{f.path}}</a>
 						</td>
 					</tr>
-					<tr style="border-bottom:1px solid gray;">
-						<td>
-							
+					<tr class="file" ng-if="!list || list.length==0">
+						<td colspan="3">
+							<p style="text-align:center;">
+								no file~
+							</p>
 						</td>
-						<td>
-							
-						</td>
-						<td></td>
 					</tr>
 				</table>
 				
 				<textarea ng-show="showtext" style="display: block; padding: 0; width: 100%; height: 80px; margin-left: -1px; border: 1px solid gray;" ng-bind="text"></textarea>
-				
-<!-- 				<span ng-if="issvn">
-					{{info.url}}
-				</span> -->
 				<span ng-if="!issvn">
 					this path is not a svn copy.
 				</span>
@@ -135,6 +129,8 @@
 					|
 					<a href="javascript:void(0);" ng-click="revert();" ng-enable="can_status('AM')" ng-class="{enable:can_status('AM')}">REVERT</a>
 					|
+					<a href="javascript:void(0);" ng-click="remove();" ng-enable="can_select()" ng-class="{enable:can_select()}">REMOVE</a>
+					|
 					<a href="javascript:void(0);" ng-click="add();" ng-enable="can_status('?')" ng-class="{enable:can_status('?')}">ADD</a>
 				</div>
 			</div>
@@ -142,6 +138,7 @@
 		<script>
 		var app = angular.module('SVNOnline', []);
 		app.controller('SVNOnlineCtrl', function($scope, $http,$location,$window) {
+			scope = $scope;
 			$scope.status = '';
 			$scope.checkall = function(){
 				$scope.checkedall = !$scope.checkedall;
@@ -209,7 +206,7 @@
 				var arr = [];
 				for (var i = 0; i < $scope.list.length; i++) {
 					var f = $scope.list[i];
-					if(f.checked && (!s || f.status == s || (s.indexOf(f.status)>=0 && f.status!=""))){
+					if(f.checked && (!s || s == '' || f.status == s || (s.indexOf(f.status)>=0 && f.status!=""))){
 						arr.push(f.path.trim());
 					}
 				}
@@ -218,9 +215,12 @@
 			};
 			$scope.can_status = function(s){
 				if($scope.issvn){
-					return s && s!=null? $scope.checkedargs(s).length>0 : true;
+					return (typeof(s)!="undefined" && s!=null)? $scope.checkedargs(s).length>0 : true;
 				}
 				return false;
+			};
+			$scope.can_select = function(){
+				return $scope.list && $scope.checkedargs("").length>0;
 			}
 			$scope.cleanup = function(){
 				$scope.status = 'cleanup...';
@@ -249,6 +249,8 @@
 				});
 			};
 			$scope.revert = function(){
+				if(!confirm("revert select ?"))
+					return;
 				$scope.status = 'revert...';
 				$scope.logs = null;
 				$http({url:'/api/svn',params:{cmd:'revert',path:$scope.path, args:$scope.checkedargs()}}).success(function(res) {
@@ -298,6 +300,20 @@
 				$http({url:'/api/svn',params:{cmd:'info',path:$scope.path}}).success(function(res) {
 					$scope.error = $scope.status = '';
 					$scope.logs = res.data;
+				}).error(function(){
+					$scope.status = '';
+					$scope.error = "error!";
+				});
+			};
+			$scope.remove = function(){
+				if(!confirm("remove select ?"))
+					return;
+				$scope.status = 'remove...';
+				$scope.logs = null;
+				$http({url:'/api/remove',params:{args:$scope.checkedargs(''),path:$scope.path}}).success(function(res) {
+					$scope.error = $scope.status = '';
+					$scope.logs = res.data;
+					$scope.chdir();
 				}).error(function(){
 					$scope.status = '';
 					$scope.error = "error!";

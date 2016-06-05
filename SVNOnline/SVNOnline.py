@@ -138,7 +138,26 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return [r.decode('gb2312') for r in res]
         except:
             return res
-    
+
+    def api_remove(self, path, args=""):
+        if path.startswith('/'):
+            path = path[1:]
+        rootp = os.path.join(options['workdir'], *(path.split('/')))
+#         os.chdir(rootp)
+        args = args.split(';')
+        delps = []
+        for p in args:
+            apath = os.path.join(rootp, p)
+            if os.path.exists(apath):
+                if os.path.isdir(apath):
+                    # dir
+                    shutil.rmtree(apath)
+                else:
+                    #
+                    os.remove(apath)
+                delps.append(p)
+        return {"count":len(delps), "removed":delps}
+
     def do_GET(self):
         if not self.check_auth():
             return
