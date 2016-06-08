@@ -20,3 +20,7 @@ CHANGES
 0.0.7
 
 - fix wsgi bug
+
+0.0.8
+
+- remove function

@@ -29,15 +29,7 @@ if can't find SVNOnline command, try:
 
 
 open broswer with url **http://127.0.0.1:8000**
-	
 
-Editor shortcut
-===============
-- **Ctrl+S** : save file
-
-- **Ctrl+Shif+N** : new file
-
-- **Ctrl+H** : show help info
 
 Other tips
 ===============
