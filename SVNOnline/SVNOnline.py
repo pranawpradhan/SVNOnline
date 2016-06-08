@@ -11,7 +11,7 @@ This module refer to SimpleHTTPServer
 """
 
 
-__version__ = "0.0.7"
+__version__ = "0.0.8"
 
 import BaseHTTPServer
 import SocketServer
@@ -66,11 +66,17 @@ class SVNOnlineRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         au = self.headers.getheader('authorization')
         if au and len(au) > 6 and au.endswith(options.get('auth')):
             return True
+        f = StringIO()
+        f.write('<center><h2>401 Unauthorized</h2></center>')
+        
         self.send_response(401, "Unauthorized")
         self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", str(f.tell()))
         self.send_header("WWW-Authenticate", 'Basic realm="%s"' % (options.get('realm') or self.server_version))
         self.send_header('Connection', 'close')
         self.end_headers()
+        f.seek(0)
+        shutil.copyfileobj(f, self.wfile)
         return False
     
     def api_list(self, path):
